@@ -1,0 +1,12 @@
+# 微信开发者工具生成的配置文件
+project.config.json
+project.private.config.json
+
+# 临时目录与日志
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# 本地设置
+.metadata/

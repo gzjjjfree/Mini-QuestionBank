@@ -1,0 +1,62 @@
+<!-- index.wxml -->
+<view class="container">
+
+
+    <!-- 使用 Grid 布局的 WXML -->
+
+    <view class="button-grid">
+        <!-- 读取新文件 -->
+        <button type="primary" loading="{{isLoading}}" bindtap="onSelectAndSaveExcel" class="practice-btn">
+            {{isLoading ? '读取中...' : '读取'}}
+        </button> 
+
+        <!-- 导出数据 -->
+        <button type="default" bindtap="outStoredFilesList" class="practice-btn">
+            导出
+        </button>
+
+        <!-- 删除数据 -->
+        <button wx:if="{{hasStoredData}}" type="warn" bindtap="deleteStoredData" class="practice-btn">
+            删除
+        </button>
+        <button class="practice-btn" bindtap="goToPractice" data-type="sequential" data-title="顺序练习">
+            <view class="btn-icon">📚</view>
+            <view class="btn-text">顺序练习</view>
+        </button>
+
+        <button class="practice-btn" bindtap="goToPractice" data-type="random" data-title="随机练习">
+            <view class="btn-icon">🎲</view>
+            <view class="btn-text">随机练习</view>
+        </button>
+
+        <button class="practice-btn" bindtap="goToPractice" data-type="editMode" data-title="修正题目">
+            <view class="btn-icon">📝</view>
+            <view class="btn-text">修正题目</view>
+        </button>
+
+        <button class="practice-btn" bindtap="goToPractice" data-type="wrong" data-title="错题练习">
+            <view class="btn-icon">❌</view>
+            <view class="btn-text">错题练习</view>
+        </button>
+
+        <button class="practice-btn" bindtap="goToPractice" data-type="favorite" data-title="收藏练习">
+            <view class="btn-icon">⭐</view>
+            <view class="btn-text">收藏练习</view>
+        </button>
+
+        <button class="practice-btn" bindtap="goToPractice" data-type="search" data-title="搜索本题库">
+            <view class="btn-icon">🔍</view>
+            <view class="btn-text">搜索本题库</view>
+        </button>
+    </view>
+
+    <!-- 存储的文件列表 -->
+    <view wx:if="{{hasFiles}}" class="file-list">
+        <view class="section-title">已存储的文件:</view>
+        <view wx:for="{{storedFiles}}" wx:key="*this" class="file-item {{storageKey === item ? 'active' : ''}}" bindtap="switchStoredFile" data-key="{{item}}">
+            <text class="file-name">{{item}}</text>
+            <text class="file-status">{{storageKey === item ? '当前使用' : '点击切换'}}</text>
+        </view>
+    </view>
+</view>
+

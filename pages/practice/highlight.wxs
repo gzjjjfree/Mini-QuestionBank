@@ -1,0 +1,20 @@
+// highlight.wxs
+function highlight(text, keyword) {
+    if (!text || !keyword) return text;
+    
+    var lowerText = text.toLowerCase();
+    var lowerKeyword = keyword.toLowerCase();
+    var index = lowerText.indexOf(lowerKeyword);
+    
+    if (index === -1) return text;
+    
+    var before = text.substring(0, index);
+    var match = text.substring(index, index + keyword.length);
+    var after = text.substring(index + keyword.length);
+    
+    return before + '<span class="highlight">' + match + '</span>' + after;
+}
+
+module.exports = {
+    highlight: highlight
+}

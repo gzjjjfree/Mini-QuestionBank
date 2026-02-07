@@ -1,0 +1,66 @@
+// practice/utils.wxs - 简化版本
+function isCorrectAnswer(correctAnswer, optionLetter) {
+    if (!correctAnswer) return false;
+    
+    var answer = correctAnswer.toString().trim().toUpperCase();
+    var letter = optionLetter.toUpperCase();
+    
+    // 简单的字符替换（不使用正则表达式）
+    answer = answer.split('、').join('');
+    answer = answer.split(',').join('');
+    answer = answer.split('，').join('');
+    answer = answer.split(' ').join('');
+    
+    // 多选题：答案包含多个字母
+    if (answer.length > 1) {
+      return answer.indexOf(letter) !== -1;
+    }
+    
+    // 单选题：单个字母比较
+    return answer === letter;
+  }
+
+  function getOptionLabel(index) {
+    return ['A', 'B', 'C', 'D', 'E', 'F', 'G'][index] || '';
+  }
+  // 替代 includes 的逻辑
+  function isCorrect(index, correctArray) {
+    if (!correctArray) return false;
+    return correctArray.indexOf(index) !== -1;
+  }
+
+  function isWrong(index, selectedArray, correctArray) {
+    if (!selectedArray || !correctArray) return false;
+    // 选了但不在正确答案里
+    return selectedArray.indexOf(index) !== -1 && correctArray.indexOf(index) === -1;
+  }
+
+  function goIncludes(array, searchElement) {
+    if (!array || array.length === 0) return false;
+    return array.indexOf(searchElement) !== -1;
+  }
+  
+  function getLastContentIndex(options, type) {
+    if (!options || options.length === 0) return 0;
+    // 从后往前找
+    for (var i = options.length - 1; i >= 0; i--) {
+        if (options[i] && options[i].trim() !== "") {
+            // 返回最后一条有内容项的“下一位”
+            if (type == "判断题") {
+                return i;
+            } else {
+                return i + 1;
+            }            
+        }
+    }
+    return 0; // 如果全是空的，就显示第0项
+};
+
+  module.exports = {
+    isCorrectAnswer: isCorrectAnswer,
+    getOptionLabel: getOptionLabel,
+    isCorrect: isCorrect,
+    isWrong: isWrong,
+    goIncludes: goIncludes,
+    getLastContentIndex: getLastContentIndex
+  }

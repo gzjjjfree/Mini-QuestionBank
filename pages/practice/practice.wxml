@@ -1,0 +1,260 @@
+<!-- practice/practice.wxml -->
+<wxs src="./utils.wxs" module="utils" />
+
+<wxs src="./highlight.wxs" module="highlight" />
+
+<view class="practice-container">
+    <!-- 顶部导航栏 -->
+    <view class="navbar">
+        <button class="back-btn" bindtap="goBack">
+            <text class="back-icon">←</text>
+            <text class="back-text">返回</text>
+        </button>
+        <view class="title">{{pageTitle}}</view>
+    </view>
+
+    <!-- 页面内容 -->
+    <view class="content">
+        <view class="practice-info">
+            <text>📖{{excelData.displayName}}</text>
+        </view>
+
+        <!-- 根据不同类型显示不同内容 -->
+        <view wx:if="{{practiceType === 'sequential' || 
+        practiceType === 'wrong' || 
+        practiceType === 'favorite' || 
+        practiceType === 'editMode' || 
+        practiceType === 'random'}}">
+            <view wx:if="{{!showTypeFilter}}" class="question-list">
+                <view wx:for="{{questionTypes}}" wx:key="*this" class="question-item" bindtap="selectQuestionType"
+                    data-type="{{item}}">
+                    <text>题目{{index + 1}}. ({{item}})</text>
+                </view>
+            </view>
+
+            <!-- 当 showTypeFilter 为 true 时显示题目和选项 -->
+            <view wx:elif="{{showTypeFilter}}">
+                <view class="touch-area" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
+                    <view class="questions-container">
+                        <view class="question-card">
+                            <view class="question-header">
+                                <text class="question-number">总{{sequentialIndex}}题 {{sequentialType}}</text>
+                                <view class="right-group">
+                                    <text class="question-collect"
+                                        bindtap="setCollect">{{isCollected ? '⭐' : '☆'}}</text>
+                                    <text class="question-difficulty">难度: {{sequentialDifficulty}}</text>
+                                </view>
+                            </view>
+
+
+                            <block wx:if="{{!isEditMode}}">
+                                <!--<view class="question-content">{{saveRecordIndex + 1}}.{{sequentialContent}}</view>-->
+                                <text class="question-content">{{saveRecordIndex + 1}}.{{sequentialContent}}</text>
+                            </block>
+                            <block wx:else>
+                                <textarea class="question-content" value="{{sequentialContent}}"
+                                    bindinput="onEditContent" auto-height maxlength="-1" />
+                            </block>
+
+                            <!-- 选项区 -->
+                            <view class="question-options">
+                                <view wx:for="{{sequentialOptions}}" wx:key="index" class="option-row"
+                                    wx:if="{{isEditMode ? (index <= utils.getLastContentIndex(sequentialOptions, sequentialType)) : item}}">
+                                    <block wx:if="{{!isEditMode}}">
+                                        <view class="option-item {{selectedOptionsClass[index]}}" bindtap="selectOption"
+                                            data-index="{{index}}">
+                                            <text wx:if="{{ sequentialType != '填空题' && sequentialType != '问答题' }}"
+                                                class="option-label">{{['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'][index]}}.</text>
+                                            <text class="option-text">{{item}}</text>
+                                            <!-- 正确/错误图标 -->
+                                            <view wx:if="{{showAnswer}}" class="answer-icon">
+                                                <text
+                                                    wx:if="{{utils.goIncludes(selectedOptions, index) && utils.goIncludes(correctOptionIndex, index)}}"
+                                                    class="icon-text correct-icon">✓</text>
+                                                <text
+                                                    wx:elif="{{(utils.goIncludes(selectedOptions, index) && !utils.goIncludes(correctOptionIndex, index)) || 
+                                                (!utils.goIncludes(selectedOptions, index) && utils.goIncludes(correctOptionIndex, index) && isMultipleChoice)}}"
+                                                    class="icon-text wrong-icon">✕</text>
+                                            </view>
+                                        </view>
+                                    </block>
+                                    <block wx:else>
+                                        <view class="option-item" data-index="{{index}}">
+                                            <block wx:if="{{ sequentialType != '填空题' && sequentialType != '问答题' }}">
+                                                <text
+                                                    class="option-label">{{['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'][index]}}.</text>
+                                                <textarea class="option-text-area" value="{{item}}"
+                                                    data-index="{{index}}" placeholder="请输入选项内容..."
+                                                    placeholder-style="color: #ccc;" bindinput="onEditOption"
+                                                    auto-height maxlength="-1" />
+                                            </block>
+                                            <block wx:else>
+                                                <textarea class="option-text-area"
+                                                    style="{{sequentialType === '问答题' ? 'text-align: left;' : ''}}"
+                                                    value="{{exercises[saveRecord.index].options.A}}"
+                                                    data-index="{{index}}" placeholder="请输入选项内容..."
+                                                    placeholder-style="color: #ccc;" bindinput="onEditOption"
+                                                    auto-height maxlength="-1" />
+                                            </block>
+                                        </view>
+                                    </block>
+                                </view>
+
+                                <!-- 显示答案 -->
+                                <view
+                                    wx:if="{{(showAnswer && !isEditMode) && (sequentialType === '填空题' || sequentialType === '问答题')}}"
+                                    class="memorize-answer" style="{{sequentialType === '问答题' ? 'text-align: left;' : ''}}">
+                                    <text>{{exercises[saveRecord.index].options.A}}</text>
+                                </view>
+
+                                <!-- 提交答案按钮（多选题需要） -->
+                                <view wx:if="{{isMultipleChoice && !isEditMode}}" class="submit-btn-container">
+                                    <button class="submit-btn" bindtap="submitAnswer">提交答案</button>
+                                </view>
+
+                                <!-- 修正题目按钮 -->
+                                <view wx:if="{{isEditMode}}" class="submit-btn-container">
+                                    <button class="footer-btns" bindtap="addOption">增加选项</button>
+                                    <button class="footer-btns" bindtap="saveCurrentQuestion">保存本题</button>
+                                    <button class="footer-btns" bindtap="addNewQuestion">新增题目</button>
+                                    <button class="footer-btns btn-delete" bindtap="deleteCurrentQuestion">删除本题</button>
+                                </view>
+
+                                <!-- 导航按钮 -->
+                                <view class="navigation-buttons">
+                                    <button class="nav-btn next-btn" bindtap="prevQuestion">上一题</button>
+                                    <button class="nav-btn next-btn" bindtap="nextQuestion">下一题</button>
+                                </view>
+                            </view>
+
+                            <!-- 固定在底部的按钮 -->
+                            <view class="fixed-bottom-buttons">
+                                <!-- 统计信息 -->
+                                <view class="stats-info">
+                                    <text>总数: {{exercises.length}}</text>
+                                    <text>✓:{{questionStatuses.info.completedCount -
+                                        questionStatuses.info.wrongCount}}</text>
+                                    <text>✗: {{questionStatuses.info.wrongCount}}</text>
+                                </view>
+
+                                <!-- 返回题型列表 -->
+                                <view class="navigation-buttons">
+                                    <button class="back-to-list" bindtap="goBackToTypeSelection">返回题型</button>
+                                    <button class="back-to-list" bindtap="goQuestions">题目列表</button>
+                                    <button class="back-to-list" bindtap="delSequential">删除记录</button>
+                                </view>
+                            </view>
+
+                            <!-- 题目列表弹窗 -->
+                            <view wx:if="{{showQuestionList}}" class="question-list-modal">
+                                <view class="modal-mask" bindtap="closeQuestionList"></view>
+                                <view class="modal-content">
+                                    <!-- 弹窗头部 -->
+                                    <view class="modal-header">
+                                        <text class="modal-title">题目列表</text>
+                                        <text class="close-btn" bindtap="closeQuestionList">×</text>
+                                    </view>
+
+                                    <!-- 统计信息 -->
+                                    <view class="stats-info">
+                                        <text class="stat-item">总数: {{exercises.length}}</text>
+                                        <text class="stat-item">已做: {{questionStatuses.info.completedCount}}</text>
+                                        <text class="stat-item">错题: {{questionStatuses.info.wrongCount}}</text>
+                                    </view>
+
+                                    <!-- 题目列表 -->
+                                    <scroll-view class="question-list-scroll" scroll-y>
+                                        <view class="question-grid">
+                                            <view wx:for="{{exercises}}" wx:key="index"
+                                                class="question-list-item {{index === saveRecordIndex ? 'current' : ''}} {{questionStatuses.status[index] === 'correct' ? 'completed' : ''}} {{questionStatuses.status[index] === 'wrong' ? 'wrong' : ''}}"
+                                                bindtap="selectQuestionFromList" data-index="{{index}}">
+                                                <text class="question-number">{{index + 1}}</text>
+
+                                                <!-- 使用统一的状态显示 -->
+                                                <view wx:if="{{questionStatuses.status[index] === 'correct'}}"
+                                                    class="status-dot completed"></view>
+                                                <view wx:if="{{questionStatuses.status[index] === 'wrong'}}"
+                                                    class="status-dot wrong"></view>
+                                            </view>
+                                        </view>
+                                    </scroll-view>
+
+                                    <!-- 当前题目标记 -->
+                                    <view class="current-indicator">
+                                        <text>当前: 第{{saveRecordIndex + 1}}题</text>
+                                    </view>
+                                </view>
+                            </view>
+
+                        </view>
+                    </view>
+                </view>
+            </view>
+
+        </view>
+
+        <view wx:elif="{{practiceType === 'search'}}">
+            <view class="search-box">
+                <input class="search-input" placeholder="请输入题目关键词" bindinput="onSearchInput"
+                    value="{{searchKeyword}}" />
+                <button class="search-btn" bindtap="onSearch">搜索</button>
+            </view>
+
+            <!-- 题型筛选面板 - 网格布局 -->
+            <view class="type-filter-panel">
+                <view wx:for="{{questionTypes}}" wx:key="*this"
+                    class="type-item {{selectedQuestionType === item ? 'active' : ''}}" bindtap="searchQuestionType"
+                    data-type="{{item}}">
+                    <text class="type-text">{{item}}</text>
+                    <view wx:if="{{selectedQuestionType === item}}" class="type-check">✓</view>
+                </view>
+            </view>
+
+            <view class="search-results">
+                <view wx:if="{{useQuestions.length === 0 && searchKeyword}}">
+                    <text class="no-result">未找到相关题目</text>
+                </view>
+                <view wx:if="{{useQuestions.length > 0 && searchKeyword}}">
+                    <text class="no-result">找到 {{useQuestions.length}} 个结果</text>
+
+                    <view wx:for="{{useQuestions}}" wx:key="index" class="question-card">
+                        <view class="question-header">
+                            <text class="question-number">第{{item.id}}题</text>
+                            <text class="question-type">{{item.type}}</text>
+                        </view>
+
+                        <!-- 原来的代码：<view class="question-content">{{item[2]}}</view> -->
+                        <view class="question-content">
+                            <rich-text nodes="{{highlight.highlight(item.content, searchKeyword)}}">
+                            </rich-text>
+                        </view>
+
+                        <!-- 选项 - 并列显示，支持多选题正确答案 -->
+                        <view class="question-options">
+                            <view class="option-row">
+                                <view wx:if="{{item.options.A}}"
+                                    class="search_option-item {{utils.isCorrectAnswer(item.answer, 'A') ? 'correct-option' : ''}}">
+                                    A. {{item.options.A}}
+                                </view>
+                                <view wx:if="{{item.options.B}}"
+                                    class="search_option-item {{utils.isCorrectAnswer(item.answer, 'B') ? 'correct-option' : ''}}">
+                                    B. {{item.options.B}}
+                                </view>
+                            </view>
+                            <view class="option-row">
+                                <view wx:if="{{item.options.C}}"
+                                    class="search_option-item {{utils.isCorrectAnswer(item.answer, 'C') ? 'correct-option' : ''}}">
+                                    C. {{item.options.C}}
+                                </view>
+                                <view wx:if="{{item.options.D}}"
+                                    class="search_option-item {{utils.isCorrectAnswer(item.answer, 'D') ? 'correct-option' : ''}}">
+                                    D. {{item.options.D}}
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </view>
+</view>

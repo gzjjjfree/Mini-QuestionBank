@@ -1,0 +1,328 @@
+/* pages/practice/practice.wxss */
+/* practice/practice.wxss */
+
+@import "./styles/sequential.wxss";
+
+/* 固定在底部的按钮容器 */
+.fixed-bottom-buttons {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1rpx solid #f0f0f0;
+    padding: 20rpx 30rpx;
+    z-index: 100;
+    box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.practice-container {
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  .navbar {
+    display: flex;
+    align-items: center;
+    padding: 20rpx 30rpx;
+    background: white;
+    border-bottom: 1rpx solid #eee;
+  }
+  
+  .back-btn {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 10rpx;
+    margin-right: 20rpx;
+  }
+  
+  .back-icon {
+    font-size: 36rpx;
+    margin-right: 10rpx;
+  }
+  
+  .back-text {
+    font-size: 28rpx;
+    color: #333;
+  }
+  
+  .title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .content {
+    padding: 30rpx;
+  }
+  
+  .practice-info {
+    background: white;
+    padding: 30rpx;
+    border-radius: 16rpx;
+    margin-bottom: 30rpx;
+    text-align: center;
+    font-size: 30rpx;
+    color: rgb(32, 29, 29);
+  }
+  
+  .search-box {
+    display: flex;
+    background: white;
+    padding: 20rpx;
+    border-radius: 16rpx;
+    margin-bottom: 20rpx;
+  }
+  
+  .search-input {
+    flex: 3; /* 增加flex比例 */
+    padding: 20rpx;
+    border: 1rpx solid #ddd;
+    border-radius: 8rpx;
+    margin-right: 20rpx;
+  }
+  
+  .search-btn {
+    flex: 1; /* 按钮固定比例 */
+    background: #007AFF;
+    color: white;
+    border: none;
+    border-radius: 8rpx;
+    padding: 0 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .question-list {
+    background: white;
+    border-radius: 16rpx;
+    overflow: hidden;
+  }
+  
+  .question-item {
+    padding: 30rpx;
+    border-bottom: 1rpx solid #f0f0f0;
+  }
+  
+  .question-item:last-child {
+    border-bottom: none;
+  }
+  
+  .search-results {
+    background: white;
+    padding: 30rpx;
+    border-radius: 16rpx;
+    text-align: center;
+    color: #666;
+  }
+
+  /* 高亮关键词样式 */
+.highlight {
+    background-color: #ff4d4f;
+    color: white;
+    padding: 2rpx 6rpx;
+    border-radius: 4rpx;
+    font-weight: bold;
+}
+
+  /* 题目内容 - 左对齐 */
+.question-content {        
+    font-size: 32rpx;
+    line-height: 52rpx;
+    margin-bottom: 30rpx;
+    color: #333;
+    text-align: left;
+    font-weight: 600; 
+  }
+  
+  /* 选项容器 */
+  .question-options {
+    margin-bottom: 5rpx;
+  }
+  
+  /* 选项行 - 使用 Flex 实现并列显示 */
+  .option-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10rpx;
+    gap: 10rpx; /* 选项之间的间距 */
+  }
+  
+  /* 单个选项项 */
+  .option-item {
+    flex: 1;
+    padding: 10rpx 10rpx; /* 减小上下内边距，保持左右内边距 */
+    background: #f8f9fa;
+    border-radius: 8rpx;
+    border: 1rpx solid #e9ecef;
+    font-size: 26rpx; /* 稍微减小字体大小 */
+    text-align: center;
+    min-height: 20rpx; /* 减小最小高度 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1; /* 显著减小行高 */
+    box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05); /* 添加轻微阴影增加层次感 */
+  }
+
+  /* 搜索结果的选项 */
+  .search_option-item{
+    flex: 1;
+    padding: 10rpx 10rpx; /* 减小上下内边距，保持左右内边距 */
+    background: #f8f9fa;
+    border-radius: 8rpx;
+    border: 1rpx solid #e9ecef;
+    font-size: 26rpx; /* 稍微减小字体大小 */
+    text-align: center;
+    min-height: 20rpx; /* 减小最小高度 */
+    display: flex;
+    align-items: center;
+    /* 移除 justify-content: center */
+    line-height: 1; /* 显著减小行高 */
+    box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05); /* 添加轻微阴影增加层次感 */
+    white-space: nowrap;      /* 不换行 */
+    overflow: hidden;         /* 超出隐藏 */
+  }
+  
+  /* 可选：添加悬停效果 */
+  .option-item:active {
+    background: #e9ecef;
+    transform: scale(0.98);
+  }
+
+  /* 正确答案样式 - 红色标识 */
+  .correct-option {
+    background: #5aeb55 !important;
+    border-color: #ff4d4f !important;
+    font-weight: bold;
+    box-shadow: 0 2rpx 6rpx rgba(255, 77, 79, 0.1);
+}
+
+  .type-filter-panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 三列网格 */
+    gap: 10rpx;
+    margin-top: 20rpx;
+    padding: 10rpx;
+    background: white;
+    border-radius: 16rpx;
+    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+}
+
+.type-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5rpx 10rpx;
+    background: #f8f9fa;
+    border: 2rpx solid #e9ecef;
+    border-radius: 12rpx;
+    font-size: 32rpx;
+    color: #333;
+    transition: all 0.3s;
+    min-height: 0rpx;
+}
+
+.type-item.active {
+    background: #007AFF;
+    color: white;
+    border-color: #007AFF;
+    transform: scale(1.05);
+}
+
+.type-text {
+    text-align: center;
+    line-height: 1.3;
+}
+
+.type-check {
+    position: absolute;
+    top: -8rpx;
+    right: -8rpx;
+    width: 36rpx;
+    height: 36rpx;
+    background: #52c41a;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20rpx;
+    font-weight: bold;
+}
+
+/* 图标基础样式 */
+.answer-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32rpx;
+    height: 32rpx;
+}
+
+.icon-text {
+    font-size: 32rpx; /* 调整 X 的大小 */
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* 勾的颜色 */
+.correct-icon {
+    color: #4CAF50;
+}
+
+/* 叉的颜色 */
+.wrong-icon {
+    color: #F44336;
+}
+
+/* 填空/问答题在未点击时的样式 */
+.option-item.memorize-hide {
+    background-color: #f8f9fa;
+    border: 2rpx dashed #1f80e9;
+    color: #1f80e9;
+    text-align: center;
+   /* padding: 30rpx;*/
+}
+
+/* 点击后的展示样式 */
+.option-item.memorize-show {
+    background-color: #e3f2fd;
+    border: 2rpx solid #1f80e9;
+    font-weight: bold;
+}
+
+/* 底部真实答案展示区 */
+.memorize-answer {
+    margin-top: 30rpx;
+    padding: 30rpx;
+    background: #fff;
+    border-radius: 12rpx;
+    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+    text-align: center;
+    color: #d32f2f; /* 醒目的红色，方便背诵 */
+    white-space: pre-wrap; /* 保持问答题的换行 */
+}
+
+.footer-btns {    
+    width: 45% !important; /* 一行显示两个 */
+    margin-bottom: 20rpx;
+    font-size: 28rpx;
+}
+.btn-delete {
+    background-color: #ff4d4f !important;
+    color: white !important;
+}
+
+.option-text-area {
+    width: 100%;       /* 占据整行宽度 */
+    min-height: 40rpx; /* 设置一个最小高度 */
+    line-height: 1.5;  /* 设置行高，让多行显示更美观 */
+    padding: 10rpx 0;  /* 适当的内边距 */
+    flex: 1;           /* 如果父级是 flex 布局，依然有效 */
+    display: block;    /* 确保是块级显示 */    
+}
