@@ -1,6 +1,12 @@
 # Mini-QuestionBank (微信小程序动态题库)
 
+![Platform](https://img.shields.io/badge/Platform-WeChat-green)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![Language](https://img.shields.io/badge/Language-JavaScript-yellow)
+![Downloads](https://img.shields.io/github/downloads/gzjjjfree/Mini-QuestionBank/total?style=flat-square&color=orange)
+
 一个基于微信小程序的轻量级、响应式题库管理与练习系统。支持多种题型自定义、Excel/TXT/JSON 导入、以及智能数据排序与冲突处理。
+
 
 ## 🚀 核心功能
 
@@ -36,14 +42,15 @@
 ## 📝 快速开始
 
 1. **克隆项目**
+2. [https://github.com/gzjjjfree/Mini-QuestionBank.git](https://github.com/gzjjjfree/Mini-QuestionBank.git)
    ```bash
-   git clone [https://github.com/gzjjjfree/Mini-QuestionBank.git](https://github.com/gzjjjfree/Mini-QuestionBank.git)
+   git clone https://github.com/gzjjjfree/Mini-QuestionBank.git
    ```
 
-2. **导入开发者工具**
+3. **导入开发者工具**
    打开微信开发者工具，选择“导入项目”，选择本项目根目录。
 
-3. **配置权限**
+4. **配置权限**
    确保在开发者工具中开启了“将 JS 编译成ES5”。
 
 ## 🔧 使用提示
@@ -53,8 +60,9 @@
 
 ## 🤝 贡献
 
-欢迎提交 Pull Request 或 Issue 来完善本项目！
+欢迎提交 **[Pull Request](https://github.com/gzjjjfree/Mini-QuestionBank/pulls)** 或 **[Issue](https://github.com/gzjjjfree/Mini-QuestionBank/issues)** 来完善本项目！
 
 ---
 感谢Gemini的帮助！Made with ❤️ by Gemini
+
 ---
