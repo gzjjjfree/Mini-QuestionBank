@@ -666,7 +666,6 @@ export const SequentialFunctions = Behavior({
             });
         },
 
-        // 删除题目
         // 删除当前显示的题目
         deleteCurrentQuestion: function () {
             const { exercises, saveRecord, sequentialType } = this.data;
@@ -684,11 +683,11 @@ export const SequentialFunctions = Behavior({
                     if (res.confirm) {
                         wx.showLoading({ title: '正在删除...' });
 
-                        // 1. 创建副本并删除当前索引的题目
+                        // 创建副本并删除当前索引的题目
                         let updatedExercises = [...exercises];
                         updatedExercises.splice(currentIndex, 1);
 
-                        // 2. 处理删除后的索引：如果删的是最后一题，索引减1；否则保持不变
+                        // 处理删除后的索引：如果删的是最后一题，索引减1；否则保持不变
                         let nextIndex = currentIndex;
                         if (nextIndex >= updatedExercises.length && updatedExercises.length > 0) {
                             nextIndex = updatedExercises.length - 1;
@@ -696,12 +695,9 @@ export const SequentialFunctions = Behavior({
                             nextIndex = 0;
                         }
 
-                        // 3. 清理并重构 saveRecord
-                        // 因为删除题目会导致后续所有题目的 ID/索引 发生变化
-                        // 最安全的方法是清空当前题型的 userAnswers，或者重新对齐映射
+                        // 清理并重构 saveRecord
                         let newUserAnswers = {};
 
-                        // 【关键修正：增加逻辑判断，防止 null 报错】
                         const currentAnswers = saveRecord && saveRecord.userAnswers ? saveRecord.userAnswers : {};
 
                         // 只有当原来的答题记录不为空时，才执行平移逻辑
@@ -714,22 +710,21 @@ export const SequentialFunctions = Behavior({
                                 // 索引在删除位之后的，向前平移一位
                                 newUserAnswers[idx - 1] = currentAnswers[idx];
                             }
-                            // 注意：idx === currentIndex 的那项被自然丢弃，实现了清理
                         });
 
-                        // 3. 准备新的记录状态
+                        // 准备新的记录状态
                         let newRecord = {
                             ...saveRecord,
                             index: nextIndex,
                             userAnswers: newUserAnswers
                         };
 
-                        // 4. 更新局部状态
+                        // 更新局部状态
                         this.setData({
                             exercises: updatedExercises,
                             saveRecord: newRecord
                         }, () => {
-                            // 5. 调用你现有的 saveMerge 逻辑
+                            // 调用 saveMerge 逻辑
                             // 它会自动完成：剔除旧数据、合并 updatedExercises、重排、梳理ID、保存缓存
                             this.saveMerge();
 
