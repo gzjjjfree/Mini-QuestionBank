@@ -87,7 +87,7 @@ export const SequentialFunctions = Behavior({
             const qType = question.type || "";
 
             // --- 新增：背题模式判断 ---
-            const isMemorizeMode = qType.includes("填空") || qType.includes("问答");
+            const isMemorizeMode = qType.includes("填空") || qType.includes("问答") || qType.includes("综合");
 
             let options = [];
             if (isMemorizeMode) {

@@ -81,7 +81,7 @@ Page({
         try {
             const fileRes = await this.chooseFile();
             const file = fileRes.tempFiles[0];
-
+            console.log(fileRes);
             const processFile = async () => {
                 const fileName = file.name;
                 const isDuplicate = this.data.storedFiles.some(item => extractFileName(item) === extractFileName(fileName));
@@ -95,8 +95,13 @@ Page({
                             cancelText: '取消',
                             success: async (res) => {
                                 if (res.confirm) {
-                                    const data = await readAndSaveExcel(file.path, fileName);
-                                    resolve(data);
+                                    try {
+                                        // 1. 这里也要加 try-catch，确保读取失败能 reject 出去
+                                        const data = await readAndSaveExcel(file.path, fileName);
+                                        resolve(data);
+                                    } catch (readError) {
+                                        reject(readError); // 读取失败，跳到外层 catch
+                                    }
                                 } else if (res.cancel) {
                                     reject(new Error('USER_CANCEL'));
                                 } else {
@@ -129,7 +134,9 @@ Page({
         } catch (error) {
             if (error.message !== 'USER_CANCEL') {
                 wx.showToast({ title: '导入失败', icon: 'none' });
+                console.log(error.message);
             }
+            console.log(error.message);
         } finally {
             this.setData({ isLoading: false });
         }

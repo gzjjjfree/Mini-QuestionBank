@@ -3,15 +3,109 @@ const XLSX = require('./xlsx.full.min.js');
 import { saveExcelData, loadExcelData, hasExcelData } from './storage.js';
 
 /**
+ * 
  * 读取Excel文件并存储
  * @param {string} filePath 临时文件路径
  * @param {string} storageKey 存储键名
  * @returns {Promise} 包含所有Excel数据的对象
  */
-export function readAndSaveExcel(filePath, fileName = 'file_data') {
+export async function readAndSaveExcel(filePath, fileName = 'file_data') {
+    const fs = wx.getFileSystemManager();
+    const fileExtension = fileName.split('.').pop().toLowerCase();
+    const timestamp = Date.now();
+    const storageKey = `${fileExtension}Data_${fileName}_${timestamp}`;
+
+    // 1. 定义编码映射
+    const encoding = ['xls', 'xlsx'].includes(fileExtension) ? 'binary' : 'utf8';
+
+    try {
+        // 2. 统一读取文件内容
+        const res = await new Promise((resolve, reject) => {
+            fs.readFile({
+                filePath,
+                encoding,
+                success: resolve,
+                fail: (err) => reject(new Error(`读取失败: ${err.errMsg}`))
+            });
+        });
+
+        let rawData;
+        let content = res.data;
+
+        // 3. 根据类型分发解析逻辑
+        if (['xls', 'xlsx'].includes(fileExtension)) {
+            rawData = parseExcelContent(content);
+        } else if (['txt', 'txts'].includes(fileExtension)) {
+            rawData = parseTxtContent(content);
+        } else if (fileExtension === 'json') {
+            rawData = parseJsonContent(content);
+        } else {
+            throw new Error('不支持的文件格式: ' + fileExtension);
+        }
+
+        // 4. 统一注入元数据
+        rawData.displayName = extractFileName(storageKey);
+        rawData.storageKey = storageKey;
+
+        // 5. 统一执行保存
+        if (saveExcelData(storageKey, rawData)) {
+            console.log(`${fileExtension} 数据已成功保存`);
+        }
+        console.log(rawData)
+        return rawData;
+
+    } catch (error) {
+        console.error("文件处理链路异常:", error);
+        throw error; // 抛出错误供 UI 层捕获显示
+    }
+}
+/** * --- 辅助解析函数：Excel ---
+ */
+function parseExcelContent(binaryData) {
+    // 将二进制串转为 Uint8Array
+    const data = new Uint8Array(binaryData.length);
+    for (let i = 0; i < binaryData.length; ++i) {
+        data[i] = binaryData.charCodeAt(i) & 0xFF;
+    }
+
+    const workbook = XLSX.read(data, { type: 'array' });
+    const resultSheets = {};
+console.log(workbook)
+    workbook.SheetNames.forEach(name => {
+        const worksheet = workbook.Sheets[name];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
+        resultSheets[name] = {
+            rawData: jsonData,
+            rowCount: jsonData.length,
+            colCount: jsonData[0] ? jsonData[0].length : 0
+        };
+    });
+
+    return prepareAllSheets(resultSheets, workbook.SheetNames);
+}
+
+/** * --- 辅助解析函数：TXT ---
+ */
+function parseTxtContent(content) {
+    // 处理 UTF-8 BOM
+    const cleanContent = content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
+    return parseTxtToQuestions(cleanContent);
+}
+
+/** * --- 辅助解析函数：JSON ---
+ */
+function parseJsonContent(content) {
+    const data = JSON.parse(content);
+    if (!data.questions || !Array.isArray(data.questions)) {
+        throw new Error('JSON题库格式不规范：缺少 questions 数组');
+    }
+    return data;
+}
+
+export function greadAndSaveExcel(filePath, fileName = 'file_data') {
     return new Promise((resolve, reject) => {
-        const fs = wx.getFileSystemManager();
-        const fileExtension = filePath.split('.').pop().toLowerCase();
+        const fs = wx.getFileSystemManager();      
+        const fileExtension = fileName.split('.').pop().toLowerCase();
         const timestamp = Date.now();
         const storageKey = `${fileExtension}Data_${fileName}_${timestamp}`;
 
@@ -40,7 +134,7 @@ export function readAndSaveExcel(filePath, fileName = 'file_data') {
                             sheetCount: workbook.SheetNames.length,
                             sheets: {},
                             timestamp: new Date().getTime(), // 添加时间戳
-                            fileName: filePath.split('/').pop() // 文件名
+                            fileName: fileName.split('/').pop() // 文件名
                         };
 
                         // 遍历每个工作表，读取数据
@@ -108,6 +202,7 @@ export function readAndSaveExcel(filePath, fileName = 'file_data') {
                 },
                 fail: (err) => {
                     console.error('读取失败', err);
+                    reject(new Error('txt文件读取失败: ' + err.errMsg));
                 }
             });
         } else if (['json'].includes(fileExtension)) {
@@ -142,6 +237,7 @@ export function readAndSaveExcel(filePath, fileName = 'file_data') {
                 },
                 fail: (err) => {
                     console.error('JSON文档读取失败', err);
+                    reject(new Error('JSON文档读取失败: ' + err.errMsg));
                 }
             });            
         } else {
@@ -300,18 +396,16 @@ export function parseTxtToQuestions(text) {
 
 // 表头解析函数
 export function parseExcelHeaders(rawData) {
-    // 1. 防御性检查：确保数据存在且不是空数组
     if (!rawData || !Array.isArray(rawData) || rawData.length === 0) return null;
 
     const headers = {};
     
-    // 定义各列的关键词映射
     const columnKeywords = {
         questionNumber: ['题号', '序号', '编号', 'number', 'id'],
-        questionType: ['题型', '题目类型', '类型', '题类'],
-        questionContent: ['题目', '题干', '内容', '问题', 'question'],
+        questionType: ['题型', '试题题型', '题型名', '题目类型', '类型', '题类'],
+        questionContent: ['题目', '题干', '内容', '试题内容', '问题', 'question', '试题内容'],
         difficulty: ['难度', '难易度', 'difficulty'],
-        correctAnswer: ['答案', '正确答案', '正确选项', 'answer'],
+        correctAnswer: ['答案', '标准答案', '正确答案', '正确选项', 'answer'],
         optionA: ['选项A', 'A选项', 'A', 'Ａ'],
         optionB: ['选项B', 'B选项', 'B', 'Ｂ'],
         optionC: ['选项C', 'C选项', 'C', 'Ｃ'],
@@ -324,40 +418,45 @@ export function parseExcelHeaders(rawData) {
     };
 
     let headerRow = null;
-    let headerRowIndex = -1; // 修改：初始化为 -1 方便判断
+    let headerRowIndex = -1;
 
-    // 2. 遍历寻找表头行
-    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+    // 1. 寻找表头行：降低门槛
+    // 只要一行中同时包含“内容相关”和“答案相关”的关键词，我们就认定它是表头
+    for (let i = 0; i < Math.min(15, rawData.length); i++) {
         const row = rawData[i];
         if (!row) continue;
 
-        let hasQuestionNumber = false;
-        let hasQuestionContent = false;
+        let hasContentKey = false;
+        let hasAnswerKey = false;
+        let hasNumberKey = false;
 
         row.forEach(cell => {
-            if (!cell) return;
+            if (cell === undefined || cell === null) return;
             const cellText = cell.toString().toLowerCase().trim();
 
-            if (!hasQuestionNumber) {
-                hasQuestionNumber = columnKeywords.questionNumber.some(keyword =>
-                    cellText.includes(keyword.toLowerCase())
-                );
+            // 检查内容关键词
+            if (!hasContentKey) {
+                hasContentKey = columnKeywords.questionContent.some(k => cellText === k.toLowerCase() || cellText.includes(k.toLowerCase()));
             }
-            if (!hasQuestionContent) {
-                hasQuestionContent = columnKeywords.questionContent.some(keyword =>
-                    cellText.includes(keyword.toLowerCase())
-                );
+            // 检查答案关键词
+            if (!hasAnswerKey) {
+                hasAnswerKey = columnKeywords.correctAnswer.some(k => cellText === k.toLowerCase() || cellText.includes(k.toLowerCase()));
+            }
+            // 检查序号关键词 (作为辅助判定)
+            if (!hasNumberKey) {
+                hasNumberKey = columnKeywords.questionNumber.some(k => cellText === k.toLowerCase() || cellText.includes(k.toLowerCase()));
             }
         });
 
-        if (hasQuestionNumber && hasQuestionContent) {
+        // 【核心修改点】：判定逻辑调整
+        // 逻辑：(有题干 && 有答案) 或者 (有题干 && 有序号) 即可认定为表头
+        if (hasContentKey && (hasAnswerKey || hasNumberKey)) {
             headerRow = row;
             headerRowIndex = i;
             break;
         }
     }
 
-    // 3. 微调重点：如果没找到表头，直接返回 null，防止后续 findIndex 报错
     if (!headerRow) return null;
 
     // 安全的查找函数
@@ -366,11 +465,13 @@ export function parseExcelHeaders(rawData) {
         return row.findIndex(cell => {
             if (cell === undefined || cell === null) return false;
             const cellText = cell.toString().toLowerCase().trim();
-            return keywords.some(keyword => cellText.includes(keyword.toLowerCase()));
+            // 优先完全匹配，其次包含匹配
+            return keywords.some(k => cellText === k.toLowerCase()) || 
+                   keywords.some(k => cellText.includes(k.toLowerCase()));
         });
     };
 
-    // 4. 微调：仅遍历 columnKeywords 的 key（不包含 Index 变量）
+    // 2. 映射所有找到的索引
     for (const [key, keywords] of Object.entries(columnKeywords)) {
         const index = findColumnIndex(headerRow, keywords);
         if (index !== -1) {
@@ -378,9 +479,7 @@ export function parseExcelHeaders(rawData) {
         }
     }
 
-    // 5. 统一数据起始标记
     headers["start"] = headerRowIndex;
-
     return headers;
 }
 
@@ -396,40 +495,57 @@ export function prepareAllSheets(sheets, sheetNames) {
         const sheetData = sheets[sheetName].rawData;
         if (!sheetData || sheetData.length === 0) return;
 
-        // --- 核心改动：针对当前 Sheet 解析表头 ---
         const currentHeaders = parseExcelHeaders(sheetData);
-        
-        // 如果该表没搜到表头（比如是个空表或者说明页），直接跳过
         if (!currentHeaders || currentHeaders.questionContent === undefined) return;
 
-        // 使用当前表的 start 索引开始遍历
         for (let i = currentHeaders.start + 1; i < sheetData.length; i++) {
             const row = sheetData[i];
             if (!row || row.length === 0 || !row[currentHeaders.questionContent]) continue;
 
+            // 1. 确定题型（优先取行内题型，无则取 Sheet 名）
+            let qType = row[currentHeaders.questionType] || sheetName;
+            qType = String(qType).trim();
+
             const qObj = {
                 id: globalIdCounter++,
-                type: row[currentHeaders.questionType] || '未知',
-                content: row[currentHeaders.questionContent],
-                answer: row[currentHeaders.correctAnswer] || '',
-                options: {
-                    // 使用 currentHeaders 动态映射
-                    A: row[currentHeaders.optionA] || '',
-                    B: row[currentHeaders.optionB] || '',
-                    C: row[currentHeaders.optionC] || '',
-                    D: row[currentHeaders.optionD] || '',
-                    E: row[currentHeaders.optionE] || '',
-                    F: row[currentHeaders.optionF] || '',
-                    G: row[currentHeaders.optionG] || '',
-                    H: row[currentHeaders.optionH] || '',
-                    I: row[currentHeaders.optionI] || ''
-                },
+                type: qType,
+                content: String(row[currentHeaders.questionContent]).trim(),
+                answer: row[currentHeaders.correctAnswer] ? String(row[currentHeaders.correctAnswer]).trim() : '',
+                options: {}, 
                 sheetName: sheetName,
                 rawIndex: i
             };
 
+            // 2. 动态填充选项
+            const optionKeys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+            let hasFoundOriginalOptions = false;
+
+            optionKeys.forEach(key => {
+                const colIndex = currentHeaders[`option${key}`];
+                // 只有当表头里定义了该选项列，且该行对应位置有值时才填充
+                if (colIndex !== undefined && colIndex !== -1 && row[colIndex] !== undefined && row[colIndex] !== '') {
+                    qObj.options[key] = String(row[colIndex]).trim();
+                    hasFoundOriginalOptions = true;
+                } else {
+                    qObj.options[key] = ''; 
+                }
+            });
+
+            // --- 核心修改逻辑：如果没有映射到选项 ---
+            if (!hasFoundOriginalOptions) {
+                // 如果是填空题、简答题等没有 A/B/C/D 的情况
+                // 将“正确答案”列的内容作为选项 A 存入，方便 UI 展示
+                if (qObj.answer) {
+                    qObj.options.A = qObj.answer;
+                    // 如果是判断题且没有选项，可以根据答案反推补全
+                    if (qType.includes('判断')) {
+                        qObj.options.B = (qObj.answer === '正确' || qObj.answer === '√') ? '错误' : '正确';
+                    }
+                }
+            }
+
             finalResult.questions.push(qObj);
-            if (qObj.type) finalResult.questionTypes.add(qObj.type);
+            finalResult.questionTypes.add(qType);
         }
     });
 
