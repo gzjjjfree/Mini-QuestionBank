@@ -80,8 +80,8 @@ Page({
 
         try {
             const fileRes = await this.chooseFile();
-            const file = fileRes.tempFiles[0];
-            console.log(fileRes);
+            const file = fileRes.tempFiles[0];           
+
             const processFile = async () => {
                 const fileName = file.name;
                 const isDuplicate = this.data.storedFiles.some(item => extractFileName(item) === extractFileName(fileName));

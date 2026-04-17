@@ -70,7 +70,7 @@ function parseExcelContent(binaryData) {
 
     const workbook = XLSX.read(data, { type: 'array' });
     const resultSheets = {};
-console.log(workbook)
+    console.log(workbook)
     workbook.SheetNames.forEach(name => {
         const worksheet = workbook.Sheets[name];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
@@ -104,7 +104,7 @@ function parseJsonContent(content) {
 
 export function greadAndSaveExcel(filePath, fileName = 'file_data') {
     return new Promise((resolve, reject) => {
-        const fs = wx.getFileSystemManager();      
+        const fs = wx.getFileSystemManager();
         const fileExtension = fileName.split('.').pop().toLowerCase();
         const timestamp = Date.now();
         const storageKey = `${fileExtension}Data_${fileName}_${timestamp}`;
@@ -126,7 +126,7 @@ export function greadAndSaveExcel(filePath, fileName = 'file_data') {
 
                         // 使用SheetJS解析Excel
                         const workbook = XLSX.read(data, { type: 'array' });
-                        
+
                         // 构建返回的数据结构
                         const result = {
                             fileType: 'excel',
@@ -156,8 +156,8 @@ export function greadAndSaveExcel(filePath, fileName = 'file_data') {
 
                         // 初始化全量题目
                         //const rawData = prepareQuestions(result.sheets[result.sheetNames[0]].rawData, headers);
-                        const rawData = prepareAllSheets(result.sheets, result.sheetNames);                        
-                        rawData.displayName = extractFileName(storageKey);                        
+                        const rawData = prepareAllSheets(result.sheets, result.sheetNames);
+                        rawData.displayName = extractFileName(storageKey);
                         rawData.storageKey = storageKey;
 
                         // 存储到本地
@@ -186,7 +186,7 @@ export function greadAndSaveExcel(filePath, fileName = 'file_data') {
                         if (content.charCodeAt(0) === 0xFEFF) {
                             content = content.slice(1);
                         }
-                        
+
                         let rawData = parseTxtToQuestions(content);
                         rawData.displayName = extractFileName(storageKey);
                         rawData.storageKey = storageKey;
@@ -217,7 +217,7 @@ export function greadAndSaveExcel(filePath, fileName = 'file_data') {
                         if (!rawData.questions || !Array.isArray(rawData.questions)) {
                             throw new Error('无效的题库格式：缺少题目数据');
                         }
-                       
+
                         rawData.displayName = extractFileName(storageKey);
                         rawData.storageKey = storageKey;
 
@@ -239,7 +239,7 @@ export function greadAndSaveExcel(filePath, fileName = 'file_data') {
                     console.error('JSON文档读取失败', err);
                     reject(new Error('JSON文档读取失败: ' + err.errMsg));
                 }
-            });            
+            });
         } else {
             reject(new Error('不支持的文件格式: ' + fileExtension));
         }
@@ -279,7 +279,9 @@ export function parseTxtToQuestions(text) {
     const types = new Set(['全部题型']);
 
     const lines = text.split('\n');
- 
+    console.log("lines: ")
+    console.log(lines)
+
     let questions = [];
     let currentType = "";
     let currentQuestion = null;
@@ -289,9 +291,9 @@ export function parseTxtToQuestions(text) {
         if (!line) return;
         // 识别题型切换
         if (line.includes("填空题")) { currentType = "填空题"; return; }
-        if (line.includes("单项选择题")) { currentType = "单选题"; return; }
+        if (line.includes("单项选择题") || line.includes("选择题")) { currentType = "单选题"; return; }
         if (line.includes("判断题")) { currentType = "判断题"; return; }
-        if (line.includes("问答题")) { currentType = "问答题"; return; }
+        if (line.includes("问答题") || line.includes("简答题")) { currentType = "问答题"; return; }
 
         // 匹配题目开始 (例如: 1.轮缘润滑...)
         const questionMatch = line.match(/^(\d+)\s*[\.、](.*)/);
@@ -318,7 +320,7 @@ export function parseTxtToQuestions(text) {
             // --- 不同题型的特殊处理 ---
             if (currentType === "单选题" || currentType === "判断题") {
                 // 提取括号内的答案：( A ) -> A
-                const ansMatch = content.match(/\(\s*([A-I√✓xX✗×])\s*\)/);
+                const ansMatch = content.match(/[（(]\s*([A-I√✓xX✗×])\s*[）)]/);
                 if (ansMatch) {
                     let rawAnswer = ansMatch[1]; // 拿到原始符号
                     // 建立映射关系
@@ -329,7 +331,7 @@ export function parseTxtToQuestions(text) {
                     // 如果是勾叉，转为 AB；否则保持 A-I 原样
                     currentQuestion.answer = map[rawAnswer] || rawAnswer;
                     // 将括号内容挖空，保持显示一致性
-                    currentQuestion.content = content.replace(/\(\s*[A-I√✓xX✗×]\s*\)/, "(   )");
+                    currentQuestion.content = content.replace(/[（(]\s*[A-I√✓xX✗×]\s*[）)]/, " ( )");
                 }
                 if (currentType === "判断题") {
                     currentQuestion.options.A = "正确";
@@ -342,12 +344,35 @@ export function parseTxtToQuestions(text) {
                  * ([^\s，。：]+) : 捕获组：匹配非空格、非标点的字符（即答案内容）
                  * (?=\s+)      : 断言：后面必须紧跟至少一个空格
                  */
-                const spaceEmptyMatch = content.match(/\s+([^\s，。：]+)(?=\s+)/);
+                //const spaceEmptyMatch = content.match(/\s+([^\s，。：]+)(?=\s+)/);
+                const spaceEmptyMatch = /\s+([\u4e00-\u9fa5a-zA-Z0-9]+)(?=\s+)/g;
+                let matches = [];
+                let match;
+                // 找出所有匹配的答案
+                while ((match = spaceEmptyMatch.exec(content)) !== null) {
+                    matches.push(match[1]);
+                }
+                console.log(matches);
                 let answerText = "";
-                if (spaceEmptyMatch) {
-                    answerText = spaceEmptyMatch[1]; // 提取出空格中间的字符
+                let newContent = content;
+                //if (spaceEmptyMatch) {
+                if (matches.length > 0) {
+                    if (matches.length > 1) {
+                        answerText = matches.join('、');
+                    } else {
+                        answerText = matches[0];
+                    }
+
+                    // 将所有答案替换为下划线
+                    matches.forEach(answer => {
+                        newContent = newContent.replace(answer, "______");
+                    });
+
+                    currentQuestion.content = newContent;
+
+                    //answerText = spaceEmptyMatch[1]; // 提取出空格中间的字符
                     // 将原内容中的该部分替换为统一的下划线
-                    currentQuestion.content = content.replace(spaceEmptyMatch[1], "______");
+                    //currentQuestion.content = content.replace(spaceEmptyMatch[1], "______");
                 } else {
                     // 如果没找到空格包围的，尝试找末尾的数字（作为保底逻辑）
                     const endNumMatch = content.match(/(\d+[\d\-\.~/]*\d*)$/);
@@ -361,20 +386,23 @@ export function parseTxtToQuestions(text) {
         }
         // 匹配单选题选项 (A.22 B.23...)
         else if (currentType === "单选题" && currentQuestion) {
-            const optionsMatch = line.match(/([A-I])[\.、]\s*([^A-I]+?(?=\s+[A-I][\.、]|\s*$))/g);
+            // 使用更严格的正则，匹配选项内容到换行或选项字母前
+            const optionsMatch = line.match(/([A-I])[\.、]\s*(.+?)(?=\s+[A-I][\.、]|\s*$)/g);
             if (optionsMatch) {
                 optionsMatch.forEach(optStr => {
                     const match = optStr.match(/([A-I])[\.、]\s*(.+)/);
                     if (match) {
                         const label = match[1];
-                        const text = match[2].trim();
+                        let text = match[2].trim();
+                        // 清理内容，避免包含下一个选项的字母
+                        text = text.replace(/\s+[A-I][\.、].*$/, '');
                         currentQuestion.options[label] = text;
                     }
                 });
             }
         }
         // 匹配问答题答案
-        else if (currentType === "问答题" && currentQuestion && line.startsWith("答:")) {
+        else if (currentType === "问答题" && currentQuestion && (/^答[：:]/.test(line))) {
             currentQuestion.options.A = line.replace("答:", "").trim();
         }
         // 处理多行内容（如果题目描述分行了）
@@ -385,6 +413,7 @@ export function parseTxtToQuestions(text) {
         }
 
         if (currentQuestion?.type) types.add(currentQuestion.type);
+        //console.log(currentQuestion);
     });
 
     // 最后一题压入
@@ -399,7 +428,7 @@ export function parseExcelHeaders(rawData) {
     if (!rawData || !Array.isArray(rawData) || rawData.length === 0) return null;
 
     const headers = {};
-    
+
     const columnKeywords = {
         questionNumber: ['题号', '序号', '编号', 'number', 'id'],
         questionType: ['题型', '试题题型', '题型名', '题目类型', '类型', '题类'],
@@ -466,8 +495,8 @@ export function parseExcelHeaders(rawData) {
             if (cell === undefined || cell === null) return false;
             const cellText = cell.toString().toLowerCase().trim();
             // 优先完全匹配，其次包含匹配
-            return keywords.some(k => cellText === k.toLowerCase()) || 
-                   keywords.some(k => cellText.includes(k.toLowerCase()));
+            return keywords.some(k => cellText === k.toLowerCase()) ||
+                keywords.some(k => cellText.includes(k.toLowerCase()));
         });
     };
 
@@ -511,7 +540,7 @@ export function prepareAllSheets(sheets, sheetNames) {
                 type: qType,
                 content: String(row[currentHeaders.questionContent]).trim(),
                 answer: row[currentHeaders.correctAnswer] ? String(row[currentHeaders.correctAnswer]).trim() : '',
-                options: {}, 
+                options: {},
                 sheetName: sheetName,
                 rawIndex: i
             };
@@ -527,7 +556,7 @@ export function prepareAllSheets(sheets, sheetNames) {
                     qObj.options[key] = String(row[colIndex]).trim();
                     hasFoundOriginalOptions = true;
                 } else {
-                    qObj.options[key] = ''; 
+                    qObj.options[key] = '';
                 }
             });
 
